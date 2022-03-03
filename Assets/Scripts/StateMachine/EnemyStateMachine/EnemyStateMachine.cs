@@ -1,75 +1,29 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using UnityEngine;
 
-public class EnemyStateMachine : IEnemyStateMachine
-{
-    private IEnemyState _currentStateHandler;    
+public class EnemyStateMachine : BaseEnemyStateMachine
+{   
+    private readonly IEnemyView _view;    
 
-    private List<IEnemyState> _states;
-
-    private EnemyFollowState _followState;
-
-    private IEnemyView _view;
-
-    public EnemyStateMachine(IEnemyView view)
-    {
-        _view = view;
-
-        InitStates(view);
+    public EnemyStateMachine(IEnemyView view)        
+    {        
+        _view = view;                
     }
 
-    public void Tick()
+    public override void Tick()
     {
-        _currentStateHandler.Update();
-    }
+        base.Tick();
 
-    public void Attack()
-    {
-        Debug.Log("attack");
-        ChangeState(_states[(int)EnemyStates.Attack]);
-    }
-
-    public void Follow(Transform target)
-    {
-        _followState.Target = target;
-        ChangeState(_states[(int)EnemyStates.Follow]);
-    }
-
-    public void Idle()
-    {
-        ChangeState(_states[(int)EnemyStates.Idle]);
-    }
-
-    public void ChangeState(IEnemyState state)
-    {
-        if (_currentStateHandler == state)
+        if (Vector2.Distance(
+            _view.Transform.position,
+            _view.Target.Value.position) < _view.FollowDistance)
         {
-            return;
-        }        
-
-        if (_currentStateHandler != null)
-        {
-            _currentStateHandler.ExitState();
-            _currentStateHandler = null;
+            ChangeState(EnemyStates.Follow);
         }
-
-        _currentStateHandler = state;
-        _currentStateHandler.EnterState();
-    }
-
-    private void InitStates(IEnemyView view)
-    {
-        var idle = new EnemyIdleState(view);
-        var attack = new EnemyAttackState(view);
-        var follow = new EnemyFollowState(view, _view.Target);
-
-        _followState = follow;
-
-        _states = new List<IEnemyState>
+        else
         {
-            idle, attack, follow
-        };
-
-        ChangeState(_states[(int)EnemyStates.Idle]);
-    }
+            ChangeState(EnemyStates.Idle);
+        }
+    }    
 }
